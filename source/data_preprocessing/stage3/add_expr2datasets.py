@@ -9,21 +9,21 @@ import argparse
 2. load csv of processed set to a df.
 2. join the dfs and save the new set to a csv.
 """
+# XXX: Make sure paths are correct
 parser = argparse.ArgumentParser(description='Homologs windows processing')
-parser.add_argument('--data_path', type=str, default='../../../data/datasets/processed_data_SCPECBS3/homologs',
-                    help='location of the partition fasta files.')
-parser.add_argument('--dataset_name', type=str, default='SCPECBS3',
+parser.add_argument('--data_path', type=str, default='../../../data/processed_data/homologs',
                     help='location of the partition fasta files.')
 parser.add_argument('--expr_dirpath', type=str, default='../../../data/raw_data/SCPECBS/expr/',
                     help='location of the partition fasta files.')
 
 args=parser.parse_args()
+
 expr_paths = [
-        "/home/tomer/CodOpTRM/data/raw_data/SCPECBS/data_files/S_cerevisiae.dat",
-        "/home/tomer/CodOpTRM/data/raw_data/SCPECBS/data_files/S_pombe.dat",
-        "/home/tomer/CodOpTRM/data/raw_data/SCPECBS/expr_files/E_coli.csv",
-        "/home/tomer/CodOpTRM/data/raw_data/SCPECBS/expr_files/B_subtilis.csv"
-        ]
+    "../../../data/raw_data/SCPECBS/S_cerevisiae.dat",
+    "../../../data/raw_data/SCPECBS/S_pombe.dat",
+    "../../../data/raw_data/SCPECBS/expr/E_coli.csv",
+    "../../../data/raw_data/SCPECBS/expr/B_subtilis.csv"
+]
 
 
 def discritize_expr(df, expr_th_perc = [0,0.25,0.5,0.75,0.9]):

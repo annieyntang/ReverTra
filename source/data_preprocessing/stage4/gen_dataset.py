@@ -10,9 +10,9 @@ from Bio.SeqRecord import SeqRecord
 import pandas as pd
 
 parser = argparse.ArgumentParser(description='Generate Arrow DataBase for Training.')
-parser.add_argument('--data_path', type=str, default='../../../data/datasets/processed_data_SCPECBS3/homologs',
+parser.add_argument('--data_path', type=str, default='../../../data/processed_data/homologs',
                     help='location of the partition fasta files.')
-parser.add_argument('--dataset_name', type=str, default='SCPECBS3',
+parser.add_argument('--dataset_name', type=str, required=True,
                     help='the name of the first species (blast query).')
 parser.add_argument('--win_size', type=int, default='75',
                     help='.')

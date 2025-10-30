@@ -1,7 +1,7 @@
 
 ### Download - ORF sequences
 
-dir_path="../../data/raw_data"
+dir_path="../../../data/raw_data"
 
 # Download - protein abundance data - origin wevbsite: PAXdb
 

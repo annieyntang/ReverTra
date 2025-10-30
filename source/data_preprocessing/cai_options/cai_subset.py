@@ -6,9 +6,9 @@ import pandas as pd
 parser = argparse.ArgumentParser(description='get subset of sequences with high expression level for CAI calculation.')
 parser.add_argument('--species', type=str, default='S_cerevisiae',
                     help='')
-parser.add_argument('--data_path', type=str, default='/home/tomer/COnTRA/data/datasets/processed_data_SCPECBS3',
+parser.add_argument('--data_path', type=str, required=True,
                     help='')
-parser.add_argument('--expr_path', type=str, default='/home/tomer/COnTRA/data/raw_data/SCPECBS/expr/S_cerevisiae.csv',
+parser.add_argument('--expr_path', type=str, required=True,
                     help='')
 parser.add_argument('--expr_th_perc', type=float, default='0.05',
                     help='')

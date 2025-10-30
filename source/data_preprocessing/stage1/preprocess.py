@@ -22,34 +22,30 @@ parser.add_argument('--cdhit_log', type=str, default='/home/tomer/ReverTra/data/
 args = parser.parse_args()
 
 seq_dbs = [
-        {'path':os.path.join(args.rawdata_path,"S_cerevisiae.fasta"), 
-            'pa_path':os.path.join(args.rawdata_path,"S_cerevisiae.PA.dat"), 
-            'species': "S_cerevisiae"},
-        {'path':os.path.join(args.rawdata_path,"S_pombe.fasta"), 
-            'pa_path':os.path.join(args.rawdata_path,"S_pombe.PA.dat"),
-            'species': "S_pombe"}
-        ]
-seq_dbs = [
-        {'path':os.path.join(args.rawdata_path,"E_coli.fasta"), 
-            'pa_path':os.path.join(args.rawdata_path,"E_coli.csv"),
-            'species': "E_coli"},
-        {'path':os.path.join(args.rawdata_path,"B_subtilis.fasta"), 
-            'pa_path':os.path.join(args.rawdata_path,"B_subtilis.csv"), 
-            'species': "B_subtilis"},
-        {'path':os.path.join(args.rawdata_path,"S_pombe.fasta"), 
-            'pa_path':os.path.join(args.rawdata_path,"S_pombe.csv"),
-            'species': "S_pombe"},
-        {'path':os.path.join(args.rawdata_path,"S_cerevisiae.fasta"), 
-            'pa_path':os.path.join(args.rawdata_path,"S_cerevisiae.csv"),
-            'species': "S_cerevisiae"}
-
-
-        ] 
-
+    {
+        'path':os.path.join(args.rawdata_path,"fasta/E_coli.fasta"), 
+        'pa_path':os.path.join(args.rawdata_path,"expr/E_coli.csv"),
+        'species': "E_coli"
+    },
+    {
+        'path':os.path.join(args.rawdata_path,"fasta/B_subtilis.fasta"), 
+        'pa_path':os.path.join(args.rawdata_path,"expr/B_subtilis.csv"), 
+        'species': "B_subtilis"
+    },
+    {
+        'path':os.path.join(args.rawdata_path,"fasta/S_pombe.fasta"), 
+        'pa_path':os.path.join(args.rawdata_path,"expr/S_pombe.csv"),
+        'species': "S_pombe"
+    },
+    {
+        'path':os.path.join(args.rawdata_path,"fasta/S_cerevisiae.fasta"), 
+        'pa_path':os.path.join(args.rawdata_path,"expr/S_cerevisiae.csv"),
+        'species': "S_cerevisiae"
+    }
+]
 
 ##### Secion 1,2, &3: aggregate, and translate to aa seqs. 
 seq_dict, trans_records = aggregate_species_records(seq_dbs)
-
 
 SeqIO.write(trans_records, args.agg_seqs_path, "fasta")
 
@@ -57,8 +53,9 @@ print("Finished section 1, 2, & 3.")
 
 ##### Section 4: Run CD-HIT and load its results.
 #Note: CD-HIT bak-file df is with columns: [ cls index | seq len | entryid | precent identity to the representative if exists]
+
 os.system(args.cdhit_exec+" -d 10000 -i "+args.agg_seqs_path+" -c 0.7 "+" -o " + args.cdhit_log+" -bak 1")
-#cls_df = pd.read_csv(args.cdhit_log+".bak.clstr",delimiter=r'\t| ',header=None,engine='python', names=['cls', 'len', 'entry', '-', 'precent_indentity'])
+
 cls_df = pd.read_csv(args.cdhit_log+".bak.clstr",delimiter=r'\t| ',header=None,engine='python', names=[0,1,2,3,4])
 for i in range(len(cls_df)):
     cls_df.iloc[i,2] = cls_df.iloc[i,2][7:-3]
@@ -69,10 +66,12 @@ nos, partition = split_data_by_cls(cls_df)
 print("Finished section 5 - finished separting sequences by clusters.")
 
 ##### Section 6 - save records by partition and species
-processed_data = process_data(seq_dict, # The aggregated index of all rna sequences
-        cls_df, # The cluster index of each seq_id
-        partition, # cluster indices partition  
-        seq_dbs)
+processed_data = process_data(
+    seq_dict, # The aggregated index of all rna sequences
+    cls_df, # The cluster index of each seq_id
+    partition, # cluster indices partition  
+    seq_dbs,
+)
 save_files(processed_data, args.data_path)
 
 print("Finished section 6 - saved partition files by species.")
@@ -82,10 +81,9 @@ for seq_db in seq_dbs:
     combine_fasta_files(args.data_path, seq_db['species'])
 
 print("Finished section 7 - combine training and validation .")
-"""
+
 ##### Section 8 - add expression level for all sequences
+# XXX: This is not doing anything the original code describes. This is done at stage 4
 for seq_db in seq_dbs:
     add_expr_level(args.data_path, seq_db['species'], seq_db['pa_path'])
 print("Finished section 8 - add expression level.")
-"""
-

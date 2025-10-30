@@ -17,6 +17,18 @@ def make_protein_record(nuc_record):
     seq_rec.species = nuc_record.species
     return seq_rec
 
+def aggregate_species_records(seq_dbs):
+    seq_dict = {}
+    trans_records = []
+    for i in range(len(seq_dbs)):
+        records = list(SeqIO.parse(seq_dbs[i]['path'], "fasta")) 
+        records = list(filter(lambda x: ((len(x)>3) & ((len(x)%3) == 0)), records))
+        for rec in records:
+            rec.species = seq_dbs[i]["species"]
+
+        seq_dict.update({rec.id : rec for rec in records})
+        trans_records.extend([make_protein_record(nuc_rec) for nuc_rec in records])
+    return seq_dict, trans_records
 
 def check_refdbs_partition(cls_members, ref_dbs):
     is_cls_in_prev_partition=False
@@ -63,41 +75,31 @@ def split_data_by_cls(cls_df, prec=[0.7,0.1,0.2]):
 
     tnos = len(cls_df) # total number of sequences
 
-    nos = [0,0,0]
+    nos = [0, 0, 0]
     partition = [list(),list(),list()]
-    for icls in range(0,len(cls_inx)):
-        noe_cls = sum(cls_df[0]==cls_inx[icls])
-        if (nos[0]/tnos <prec[0]):
-          partition[0].append(cls_inx[icls])
-          nos[0] = nos[0] + noe_cls
-        elif (nos[1]/tnos <prec[1]):
-          partition[1].append(cls_inx[icls])
-          nos[1] = nos[1] + noe_cls
+    for icls in range(0, len(cls_inx)):
+        noe_cls = sum(cls_df[0] == cls_inx[icls])
+        if (nos[0] / tnos < prec[0]):
+            # Training
+            partition[0].append(cls_inx[icls])
+            nos[0] = nos[0] + noe_cls
+        elif (nos[1] / tnos < prec[1]):
+            # Validation
+            partition[1].append(cls_inx[icls])
+            nos[1] = nos[1] + noe_cls
         else:
-          partition[2].append(cls_inx[icls])
-          nos[2] = nos[2] + noe_cls
+            # Test
+            partition[2].append(cls_inx[icls])
+            nos[2] = nos[2] + noe_cls
 
     return nos, partition  
-
-def aggregate_species_records(seq_dbs):
-    seq_dict = {}
-    trans_records = []
-    for i in range(len(seq_dbs)):
-        records = list(SeqIO.parse(seq_dbs[i]['path'], "fasta")) 
-        records = list(filter(lambda x: ((len(x)>3) & ((len(x)%3) == 0)), records))
-        for rec in records:
-            rec.species = seq_dbs[i]["species"]
-
-        seq_dict.update({rec.id : rec for rec in records})
-        trans_records.extend([make_protein_record(nuc_rec) for nuc_rec in records])
-    return seq_dict, trans_records
 
 def process_data(seq_dict, cls_df, partition, seq_dbs):
     #init
     processed_data = {}
-    for i in range(len(partition)):
+    for i in range(len(partition)): # Number of splits
         processed_data[i] = dict()
-        for j in range(len(seq_dbs)):
+        for j in range(len(seq_dbs)): # Number of species
             species = seq_dbs[j]['species']
             processed_data[i][species] = list()
 
@@ -110,20 +112,64 @@ def process_data(seq_dict, cls_df, partition, seq_dbs):
 
     return processed_data
 
-def save_files(processed_data, data_path):
-    for partition_id in processed_data:
-        for species in processed_data[partition_id]:
-            file_name = species+"."+str(partition_id)
+# def save_files(processed_data, data_path):
+#     for partition_id in processed_data:
+#         for species in processed_data[partition_id]:
+#             file_name = species+"."+str(partition_id)
             
-            data_dir = os.path.join(data_path,species)
-            if not os.path.exists(data_dir):
-                os.mkdir(data_dir)
+#             data_dir = os.path.join(data_path,species)
+#             if not os.path.exists(data_dir):
+#                 os.makedirs(data_dir, exist_ok=True)
 
-            dst_path = os.path.join(data_dir,file_name)
+#             dst_path = os.path.join(data_dir,file_name)
 
-            SeqIO.write(processed_data[partition_id][species],dst_path+'.nt.fasta','fasta')
+#             SeqIO.write(
+#                 processed_data[partition_id][species],
+#                 dst_path+'.nt.fasta',
+#                 'fasta',
+#             )
 
-            SeqIO.write((make_protein_record(rec) for rec in processed_data[partition_id][species]), dst_path+".aa.fasta",'fasta')
+#             SeqIO.write(
+#                 (
+#                     make_protein_record(rec)
+#                     for rec in processed_data[partition_id][species]
+#                 ),
+#                 dst_path+".aa.fasta",
+#                 'fasta',
+#             )
+
+
+def save_files(processed_data, data_path):
+    combined_species_name = "SCPECBS3"
+    for partition_id in processed_data:
+            file_name = "{}.{}".format(
+                combined_species_name,
+                partition_id,
+            )
+
+            if not os.path.exists(data_path):
+                os.makedirs(data_path, exist_ok=True)
+
+            dst_path = os.path.join(data_path, combined_species_name, file_name)
+
+            combined_data = []
+            for species in processed_data[partition_id]:
+                combined_data.extend(processed_data[partition_id][species])
+            SeqIO.write(
+                combined_data,
+                dst_path+'.nt.fasta',
+                'fasta',
+            )
+
+            SeqIO.write(
+                (
+                    make_protein_record(rec)
+                    for species in processed_data[partition_id]
+                    for rec in processed_data[partition_id][species]
+                ),
+                dst_path+".aa.fasta",
+                'fasta',
+            )
 
 
 def combine_fasta_files(data_path, species_name):
@@ -139,11 +185,15 @@ def combine_fasta_files(data_path, species_name):
 
 def create_subset_with_expr(records, expr_dict):
     for rec in records:
-        print(expr_dict[rec.id])
+        if rec.id in expr_dict:
+            print(expr_dict[rec.id])
 
 def add_expr_level(data_path, species_name, pa_path):
     expr_df = pd.read_csv(pa_path)
-    expr_df = {expr_df.iloc[i]['ids']:expr_df.iloc[i]['expr'] for i in range(len(expr_df))}
+    expr_df = {
+        expr_df.iloc[i]['ids']: expr_df.iloc[i]['expr']
+        for i in range(len(expr_df))
+    }
     data_path = os.path.join(data_path, species_name)
     train = os.path.join(data_path, species_name+".0.nt.fasta")
     val = os.path.join(data_path, species_name+".1.nt.fasta")

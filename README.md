@@ -1,5 +1,58 @@
 # ReverTra
 
+## Packages
+```
+pip install datasets==2.21.0 # https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524
+pip install transformers[torch]
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 # See https://docs.isambard.ac.uk/user-documentation/applications/ML-packages/#gpu-accelerated-support-pytorch-
+pip install biopython
+pip install wandb
+```
+
+### Download and preprocess data
+NOTE 1: For all `stages` below, make sure the paths are set correctly
+NOTE 2: Ensure all CSVs in `data/raw_data` have expected content
+NOTE 3: `win_size=75` is commented out
+```
+# stage 1
+
+# Install CD-Hit
+conda install bioconda::cd-hit
+
+cd source/data_preprocessing/stage1
+mkdir -p ../../../data/logs/SCPECBS3_logs
+./download_orfs.sh
+./preprocess_dbs.sh
+
+# stage 2
+
+# install blast+
+cd $HOME
+wget https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.17.0+-aarch64-linux.tar.gz
+tar -xvzf ncbi-blast-2.17.0+-aarch64-linux.tar.gz
+export PATH="$HOME/ncbi-blast-2.17.0+/bin:$PATH"
+
+cd source/data_preprocessing/stage2
+./calculate_homologs.sh
+./calculate_win_homologs.sh
+
+# stage 3
+python add_expr2datasets.py
+
+# stage 4
+./gen_DBs.sh
+
+# caioptions
+./cai_option_subsets.sh
+```
+
+### Test run
+```
+export winsize=30
+CUDA_VISIBLE_DEVICES=0 python -m source.models.COBaBExRi.train --config_path=./configs/wins_configs/win${winsize}/Pretrain_config.json
+```
+
+## Introduction
 This project corresponds to the paper _"Predicting gene sequences with AI to study evolutionarily
 selected codon usage patterns" by Tomer Sidi, Shir Bahiri-Elitzur, Tamir Tuller, and Rachel Kolodny._
 

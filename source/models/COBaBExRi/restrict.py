@@ -1,8 +1,8 @@
-from transformers import LogitsWarper
+from transformers import LogitsProcessor
 import torch
 
 
-class RestrictToAaLogitsWarper(LogitsWarper):
+class RestrictToAaLogitsWarper(LogitsProcessor):
     def __init__(self, masked_input_ids: torch.LongTensor, restrict_dict: dict, filter_value: float = -float("Inf"), min_tokens_to_keep: int = 1):
         self.masked_input_ids = masked_input_ids
         self.restrict_dict = restrict_dict

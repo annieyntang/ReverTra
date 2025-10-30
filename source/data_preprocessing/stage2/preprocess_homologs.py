@@ -9,9 +9,9 @@ from Bio.SeqRecord import SeqRecord
 import pandas as pd
 
 parser = argparse.ArgumentParser(description='Homologs windows processing')
-parser.add_argument('--data_path', type=str, default='/home/tomer/CodOpTRM/data/homologs_data/processed_test',
+parser.add_argument('--data_path', type=str, required=True,
                     help='location of the partition fasta files.')
-parser.add_argument('--log_path', type=str, default='/home/tomer/CodOpTRM/data/homologs_data/logs',
+parser.add_argument('--log_path', type=str, required=True,
                     help='location of the partition blast output files.')
 parser.add_argument('--species1', type=str, default='S_cerevisiae',
                     help='the name of the first species (blast query).')

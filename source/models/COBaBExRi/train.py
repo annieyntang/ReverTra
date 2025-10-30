@@ -84,12 +84,13 @@ def init_training_args(train_config, model_path, dataset_size):
     number_of_epochs = int(number_of_steps/steps_in_epoch)
 
     training_args = TrainingArguments(
-            report_to="wandb",
+            # report_to="wandb",
+            report_to="none",
             #report_to=None,
             output_dir=f"{model_path}",
             warmup_steps=train_config["warmup_steps"],
             overwrite_output_dir=True,
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             #weight_decay=0.01,
             learning_rate=train_config["starting_lr"],
             per_device_train_batch_size=batch_size,
@@ -121,7 +122,7 @@ def init_trainer(training_args, tokenizer, dataset, masking_dict, restriction_di
             sw_aa_size=config['sw_aa_size'])
 
     if not os.path.exists(training_args.output_dir):
-        os.mkdir(training_args.output_dir)
+        os.makedirs(training_args.output_dir, exist_ok=True)
 
     with open(os.path.join(training_args.output_dir,"configs.log"),"w") as handle:
         json.dump(config, handle)
@@ -155,7 +156,7 @@ if __name__ == '__main__':
     with open(args.config_path,"r") as f:
         config = json.load(f)
     print(config)
-    wandb.init(project=config['project_name'], name=config['model_name'])#tags=['overfit_test', 'small_data'])
+    # wandb.init(project=config['project_name'], name=config['model_name'])#tags=['overfit_test', 'small_data'])
     dataset = load_dataset(config['dataset_path'], single_species_flag=config['dataset_single_species_flag'], finetune_flag=config['finetune_flag'])
     tokenizer, masking_dict, restriction_dict = load_tokenizer(config['tokenizer_path'])
     model = load_model(config, checkpoint_flag=config['checkpoint_flag'], finetune_flag=config['finetune_flag'])

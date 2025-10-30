@@ -16,7 +16,7 @@ stage2 - blast: all-against-all for each set:
 ---------------------------------------------
 Prerequisites: blast installed (specifically, blastp  and makeblastdb).
 
-1. Blast all vs all for traning, validation, and test sets (0,1,and 2, respectively) - apply in stage2 folder:
+1. Blast all vs all for training, validation, and test sets (0,1,and 2, respectively) - apply in stage2 folder:
 	./calculate_homologs.sh 0  
 	./calculate_homologs.sh 1
 	./calculate_homologs.sh 2
