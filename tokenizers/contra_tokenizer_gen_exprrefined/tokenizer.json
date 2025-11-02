@@ -42,7 +42,7 @@
     {
       "id": 4,
       "special": true,
-      "content": "<unk>",
+      "content": "<False>",
       "single_word": false,
       "lstrip": false,
       "rstrip": false,
@@ -1032,6 +1032,6 @@
   "model": {
     "type": "WordLevel",
     "vocab": {},
-    "unk_token": "<unk>"
+    "unk_token": "<False>"
   }
 }

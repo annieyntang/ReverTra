@@ -3,7 +3,7 @@
 ## Packages
 ```
 pip install datasets==2.21.0 # https://discuss.huggingface.co/t/cant-import-load-metric-from-datasets/107524
-pip install transformers[torch]
+pip install transformers[torch]==4.44.2
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 # See https://docs.isambard.ac.uk/user-documentation/applications/ML-packages/#gpu-accelerated-support-pytorch-
 pip install biopython
 pip install wandb

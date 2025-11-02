@@ -1,28 +1,36 @@
 #!/bin/bash
 
-#SBATCH --job-name=pretrain_win30
-#SBATCH --output=/home/u5aw/annieyntang.u5aw/ReverTra/logs/pretrain_win30_%j.out
+#SBATCH --job-name=pretrain
+#SBATCH --output=/scratch/u5aw/annieyntang.u5aw/ReverTra/logs/pretrain_%j.out
 #SBATCH --gpus=1
 #SBATCH --ntasks-per-gpu=1
-#SBATCH --time=20:00:00
+#SBATCH --time=24:00:00
+
 
 cd /home/u5aw/annieyntang.u5aw/ReverTra
 source ~/miniforge3/bin/activate
 conda activate mBART
 
-# for winsize in 30 50 100 150
-# do
-#     CUDA_VISIBLE_DEVICES=0 python -m source.models.COBaBExRi.train --config_path=./configs/wins_configs/win${winsize}/Pretrain_config.json
-# done
 
-winsizes=(30 50 100 150)
+winsizes=(10)
 max_parallel=4   # how many to run at once on GPU:0
+training_stage=pretrain
+TIMESTAMP=$(date + %Y%m%d_%H%M%S)
+LOGROOT=/scratch/u5aw/annieyntang.u5aw/ReverTra/logs
+
 
 sem=0
 for w in "${winsizes[@]}"; do
+
+  LOGDIR=${LOGROOT}/win${w}
+  mkdir -p ${LOGDIR}
+
+  LOGFILE=${LOGDIR}/${training_stage}_${TIMESTAMP}_${SLURM_JOB_ID}.out
+
   CUDA_VISIBLE_DEVICES=0 python -m source.models.COBaBExRi.train \
     --config_path=./configs/wins_configs/win${w}/Pretrain_config.json \
-    > logs/train_win${w}.out 2>&1 &
+    > ${LOGFILE} 2>&1 &
+
   ((sem++))
   if (( sem % max_parallel == 0 )); then wait; fi
 done
