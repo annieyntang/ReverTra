@@ -12,11 +12,13 @@ source ~/miniforge3/bin/activate
 conda activate mBART
 
 
-winsizes=(10)
+winsizes=(30)
 max_parallel=4   # how many to run at once on GPU:0
 training_stage=pretrain
-TIMESTAMP=$(date + %Y%m%d_%H%M%S)
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOGROOT=/scratch/u5aw/annieyntang.u5aw/ReverTra/logs
+
+rm -f /scratch/u5aw/annieyntang.u5aw/ReverTra/logs/pretrain_${SLURM_JOB_ID}.out
 
 
 sem=0
@@ -27,8 +29,7 @@ for w in "${winsizes[@]}"; do
 
   LOGFILE=${LOGDIR}/${training_stage}_${TIMESTAMP}_${SLURM_JOB_ID}.out
 
-  CUDA_VISIBLE_DEVICES=0 python -m source.models.COBaBExRi.train \
-    --config_path=./configs/wins_configs/win${w}/Pretrain_config.json \
+  CUDA_VISIBLE_DEVICES=0 python -m source.models.COBaBExRi.train --config_path=./configs/wins_configs/win${w}/Pretrain_config.json \
     > ${LOGFILE} 2>&1 &
 
   ((sem++))

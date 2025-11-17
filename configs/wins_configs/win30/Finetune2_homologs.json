@@ -1,7 +1,7 @@
 {
     "Description":"This is a finetuning configuration for codon optimization model based on BART language model.",
     "project_name": "SCPECBS3",
-    "dataset_path": "/scratch/u5aw/annieyntang.u5aw/ReverTra/data/processed_data/homologs/SCPECBS3_SCPECBS3_ExprRefined30",
+    "dataset_path": "/home/u5aw/annieyntang.u5aw/scratch/ReverTra/hf_datasets",
     "model_outpath": "/scratch/u5aw/annieyntang.u5aw/ReverTra/models",
     "model_name": "Finetuned2Steps_homologs_30_ExR",
     "tokenizer_path": "./tokenizers/contra_tokenizer_gen_exprrefined",

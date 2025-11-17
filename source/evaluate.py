@@ -6,6 +6,7 @@ import warnings
 from transformers import BartForConditionalGeneration
 from datasets import load_from_disk
 from .models import COBaBExRi, CAI, Harmonization
+from tqdm import tqdm
 import argparse
 
 parser = argparse.ArgumentParser(description="BART for Codon Optimization")
@@ -47,8 +48,12 @@ print(args)
 
 def load_dataset(config):
     codon_dataset = load_from_disk(config["dataset_path"])
-    del codon_dataset["train"]
-    del codon_dataset["val"]
+    # del codon_dataset["train"]
+    # del codon_dataset["val"]
+    file_copy = list(codon_dataset.keys())
+    for file in file_copy:
+        if file != "test":
+            del codon_dataset[file]
     print(codon_dataset)
     if config["mask_all"]:  # if single species leave only AA seq of query as input.
         print("mask all alignments")
@@ -127,7 +132,7 @@ if __name__ == "__main__":
     )
 
     evalset = []
-    for i in range(num_entries_in_ds):
+    for i in tqdm(range(num_entries_in_ds)):
         res = {"inx": i, "eval_type": config["eval_type"]}
         res.update(get_example_data(config, codon_dataset["test"][i]))
         if config["eval_type"] == "cai":

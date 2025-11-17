@@ -110,18 +110,20 @@ processed_data = process_data(
     partition,  # cluster indices partition
     seq_dbs,
 )
+
 save_files(processed_data, args.data_path)
 
 print("Finished section 6 - saved partition files by species.")
 
+# XXX Below is just simply wrong.
 ##### Section 7 - combine training and validation
-for seq_db in seq_dbs:
-    combine_fasta_files(args.data_path, seq_db["species"])
+# for seq_db in seq_dbs:
+#     combine_fasta_files(args.data_path, seq_db["species"])
 
-print("Finished section 7 - combine training and validation .")
+# print("Finished section 7 - combine training and validation .")
 
-##### Section 8 - add expression level for all sequences
-# XXX: This is not doing anything the original code describes. This is done at stage 4
-for seq_db in seq_dbs:
-    add_expr_level(args.data_path, seq_db["species"], seq_db["pa_path"])
-print("Finished section 8 - add expression level.")
+# ##### Section 8 - add expression level for all sequences
+# # XXX: This is not doing anything the original code describes. This is done at stage 4
+# for seq_db in seq_dbs:
+#     add_expr_level(args.data_path, seq_db["species"], seq_db["pa_path"])
+# print("Finished section 8 - add expression level.")

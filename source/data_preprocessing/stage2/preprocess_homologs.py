@@ -1,3 +1,4 @@
+import _pickle as pickle
 import argparse
 import os
 import math
@@ -91,6 +92,7 @@ def generate_dictionaries(data_path, partition_id):
         data_path, args.species2 + "." + str(partition_id) + ".nt.fasta"
     )
 
+    print(data_path, protO1)
     seq_dict1 = {
         rec.id.replace("trans_", ""): rec.seq for rec in SeqIO.parse(protO1, "fasta")
     }
@@ -148,26 +150,12 @@ def get_codons_for_aa(dna1, s1r, dna2, s2r):
     return str(codons1), str(codons2)
 
 
-def init_species_dict(species=["B_subtilis", "E_coli", "S_cerevisiae", "S_pombe"]):
-    species_db_path = os.path.join(args.data_path, "..")
-    d = {s: [] for s in species}
-    for s in species:
-        species_path = os.path.join(species_db_path, s)
-        species_path = os.path.join(
-            species_path, s + "." + str(args.partition_id) + ".nt.fasta"
-        )
-        for rec in SeqIO.parse(species_path, "fasta"):
-            d[s].append(rec.id)
-
-        print(species_path)
-    print(d)
-    return d
-
-
 def get_id_origin_species(rec_id, species_dict):
     for s in species_dict.keys():
         if rec_id in species_dict[s]:
             return s
+    import ipdb
+    ipdb.set_trace()
     return False  # "<unk>"
 
 
@@ -224,7 +212,12 @@ def preprocess_homologs(data_path, partition_id, sw_size, sw_jump):
     subject_dna_seqs = []
     query_species = []
     subject_species = []
-    species_dict = init_species_dict()
+
+    species_dict = pickle.load(
+        open(os.path.join(
+            data_path, args.species1 + ".species.pkl"
+        ), "rb")
+    )
     for i in range(len(aligned_sequences)):
         name1 = aligned_sequences.iloc[i]["qseqid"]
         name2 = aligned_sequences.iloc[i]["sseqid"]
@@ -235,8 +228,17 @@ def preprocess_homologs(data_path, partition_id, sw_size, sw_jump):
         )
         query_dna_seqs.append(query_dna)
         subject_dna_seqs.append(subject_dna)
-        query_species.append(get_id_origin_species(name1, species_dict))
-        subject_species.append(get_id_origin_species(name2, species_dict))
+        query_species.append(
+            species_dict.get(name1, False)
+        )
+        subject_species.append(
+            species_dict.get(name2, False)
+        )
+        
+        if not query_species[-1]:
+            import ipdb
+            ipdb.set_trace()
+            print(name1, name2)
 
     aligned_sequences["query_dna_seq"] = query_dna_seqs
     aligned_sequences["subject_dna_seq"] = subject_dna_seqs

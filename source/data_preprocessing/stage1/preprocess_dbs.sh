@@ -1,6 +1,7 @@
 #!/bin/sh
 
 mkdir -p ../../../data/logs
+mkdir -p ../../../data/processed_data/SCPECBS3
 python preprocess.py \
 	--rawdata_path=../../../data/raw_data/SCPECBS \
 	--cdhit_exec=/home/u5aw/annieyntang.u5aw/miniforge3/envs/mBART/bin/cd-hit \

@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 import pandas as pd
+import _pickle as pickle
 from Bio.Seq import Seq
 from Bio.Seq import reverse_complement, transcribe, back_transcribe, translate
 from Bio import SeqIO
@@ -75,7 +76,7 @@ def split_data_by_previous_partition(cls_df, ref_dbs, prec=[0.7, 0.1, 0.2]):
 
     return nos, partition
 
-
+# make sure samples from the same cluster are in the same partition
 def split_data_by_cls(cls_df, prec=[0.7, 0.1, 0.2]):
     cls_inx = cls_df[0].unique()
     random.shuffle(cls_inx)
@@ -85,7 +86,7 @@ def split_data_by_cls(cls_df, prec=[0.7, 0.1, 0.2]):
     nos = [0, 0, 0]
     partition = [list(), list(), list()]
     for icls in range(0, len(cls_inx)):
-        noe_cls = sum(cls_df[0] == cls_inx[icls])
+        noe_cls = sum(cls_df[0] == cls_inx[icls])   # count number of examples in each cluster
         if nos[0] / tnos < prec[0]:
             # Training
             partition[0].append(cls_inx[icls])
@@ -150,6 +151,7 @@ def process_data(seq_dict, cls_df, partition, seq_dbs):
 
 def save_files(processed_data, data_path):
     combined_species_name = "SCPECBS3"
+    id_to_species = {}
     for partition_id in processed_data:
         file_name = "{}.{}".format(
             combined_species_name,
@@ -164,9 +166,17 @@ def save_files(processed_data, data_path):
         combined_data = []
         for species in processed_data[partition_id]:
             combined_data.extend(processed_data[partition_id][species])
+
+        nt_path = dst_path + ".nt.fasta"
+        aa_path = dst_path + ".aa.fasta"
+        if os.path.exists(nt_path):
+            nt_path = dst_path + ".new.nt.fasta"
+        if os.path.exists(aa_path):
+            aa_path = dst_path + ".new.aa.fasta"
+
         SeqIO.write(
             combined_data,
-            dst_path + ".nt.fasta",
+            nt_path,
             "fasta",
         )
 
@@ -176,9 +186,21 @@ def save_files(processed_data, data_path):
                 for species in processed_data[partition_id]
                 for rec in processed_data[partition_id][species]
             ),
-            dst_path + ".aa.fasta",
+            aa_path,
             "fasta",
         )
+        id_to_species.update(
+            {rec.id: rec.species for rec in combined_data}
+        )
+        
+    pickle.dump(
+        id_to_species,
+        open(os.path.join(
+            data_path,
+            combined_species_name,
+            "{}.species.pkl".format(combined_species_name)
+        ), "wb"),
+    )
 
 
 def combine_fasta_files(data_path, species_name):

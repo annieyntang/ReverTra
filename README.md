@@ -7,6 +7,7 @@ pip install transformers[torch]==4.44.2
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 # See https://docs.isambard.ac.uk/user-documentation/applications/ML-packages/#gpu-accelerated-support-pytorch-
 pip install biopython
 pip install wandb
+pip install black
 ```
 
 ### Download and preprocess data
@@ -20,7 +21,6 @@ NOTE 3: `win_size=75` is commented out
 conda install bioconda::cd-hit
 
 cd source/data_preprocessing/stage1
-mkdir -p ../../../data/logs/SCPECBS3_logs
 ./download_orfs.sh
 ./preprocess_dbs.sh
 
@@ -33,7 +33,9 @@ tar -xvzf ncbi-blast-2.17.0+-aarch64-linux.tar.gz
 export PATH="$HOME/ncbi-blast-2.17.0+/bin:$PATH"
 
 cd source/data_preprocessing/stage2
-./calculate_homologs.sh
+./calculate_homologs.sh 0
+./calculate_homologs.sh 1
+./calculate_homologs.sh 2
 ./calculate_win_homologs.sh
 
 # stage 3

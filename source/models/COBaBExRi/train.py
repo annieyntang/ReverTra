@@ -6,7 +6,7 @@ import wandb
 import transformers
 from transformers import BartConfig, BartForConditionalGeneration
 from transformers import AutoTokenizer, TrainingArguments, Trainer
-from datasets import load_from_disk, load_metric
+from datasets import load_from_disk, load_metric, load_dataset as hf_load_dataset
 
 from .Collator import (
     CodonTranslationCollator,
@@ -36,7 +36,8 @@ def load_dataset(dataset_path, single_species_flag=False, finetune_flag=False):
     codon_dataset = load_from_disk(dataset_path)
     print("Codon Dataset: ", codon_dataset)
     if single_species_flag:
-        # Fileter all trainslation entries from the dataset. For each entry in the dataset, input and output for the model are only from the same species.
+        # Filter all translation entries from the dataset.
+        # For each entry in the dataset, input and output for the model are only from the same species.
         codon_dataset = codon_dataset.filter(
             lambda example: example["sseqid"] == example["qseqid"]
         )
@@ -158,7 +159,7 @@ def init_trainer(
         model=model,
         args=training_args,
         train_dataset=dataset["train"],
-        eval_dataset=dataset["val"],
+        eval_dataset=dataset["val{}".format(config["sw_aa_size"])],
         data_collator=training_collator,
         tokenizer=tokenizer,
         compute_metrics=metrics,

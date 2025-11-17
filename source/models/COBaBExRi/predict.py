@@ -10,7 +10,6 @@ from transformers import (
     BartForConditionalGeneration,
     AutoTokenizer,
 )
-from datasets import load_from_disk, load_metric
 import torch
 from Bio.Seq import Seq
 
@@ -51,7 +50,7 @@ def prepare_inputs(example, tokenizer, config):
     )
     if config["inference_type"] == "mimic":
         sseq, subject_species = (
-            example["subject_dna_seq"].split(" "),
+            example["subject_dna_seq"],
             example["subject_species"],
         )
     else:
@@ -134,32 +133,61 @@ def calc_combined_gen_from_sliding_windows_logits(sw_logits, seqlen, sw_aa_size)
     counts = torch.zeros([1, seqlen]).cuda()
     most_freq_pred = torch.zeros([seqlen, 1])
     # This segment aggregates (sums) the logits of the different windows. Only the relevant codons (restricted by AA) are sumed.
+
+    # N = sw_logits.shape[0]
+    # C = sw_logits.shape[-1]
+    # J = min(sw_aa_size, seqlen, sw_logits.shape[1] - 1)  # be safe about bounds
+
+    # # values to add: (N, J, C)
+    # vals = torch.exp(sw_logits[:, 1:1+J, :])
+
+    # # target row indices for collect_logits / counts: (N, J) -> flatten to (N*J,)
+    # i_idx = torch.arange(N, device=sw_logits.device)[:, None]
+    # j_idx = torch.arange(J, device=sw_logits.device)[None, :]
+    # idx = (i_idx + j_idx).reshape(-1)
+
+    # # add to collect_logits
+    # collect_logits.index_add_(0, idx, vals.reshape(-1, C))
+
+    # # add to counts
+    # counts[0].index_add_(0, idx, torch.ones(idx.numel(), dtype=counts.dtype, device=counts.device))
+
     for i in range(sw_logits.shape[0]):  # window num
         for j in range(min(sw_aa_size, seqlen)):  # sequence len - codon index
             collect_logits[i + j, :] += torch.exp(sw_logits[i, 1 + j, :])
             counts[0, i + j] += 1
 
-    for i in range(seqlen):
-        collect_logits[i, :] /= counts[0, i]
+    # for i in range(seqlen):
+    #     collect_logits[i, :] /= counts[0, i]
+
+    collect_logits /= counts[0][:, None]
 
     collect_logits = torch.log(collect_logits)
     collect_logits = collect_logits.log_softmax(dim=-1)
 
-    for i in range(seqlen):
-        most_freq_pred[i] = torch.argmax(collect_logits[i, :]).item()
+    # for i in range(seqlen):
+    #     most_freq_pred[i] = torch.argmax(collect_logits[i, :]).item()
+
+    most_freq_pred = torch.argmax(collect_logits, dim=-1).cpu()
+
     # add later, the probabilities of each prediction (from freq)
     return collect_logits, most_freq_pred
 
+import timeit
 
 def predict(config, example, mask_restriction_dict, tokenizer, model):
 
     input_ids, masked_ids = prepare_inputs(example, tokenizer, config)
+    tic = timeit.default_timer()
     outputs = generate_outputs(
         input_ids, masked_ids, mask_restriction_dict, model, config["sw_aa_size"]
     )
+    print("generate_outputs: {}s".format(timeit.default_timer() - tic))
+    tic = timeit.default_timer()
     logits, most_freq_pred = calc_combined_gen_from_sliding_windows_logits(
         outputs, len(example["qseq"]), config["sw_aa_size"]
     )
+    print("calc_combined_gen: {}s".format(timeit.default_timer() - tic))
 
     ce = torch.nn.CrossEntropyLoss()
     most_freq_pred = most_freq_pred.clone().detach().reshape((1, -1))
@@ -184,10 +212,10 @@ def predict(config, example, mask_restriction_dict, tokenizer, model):
             :, 1:-1
         ]
         mask = true_vals > config["special_token_th"]  # special tokens threshold
-        true_vals = true_vals.tolist()[0]
+        # true_vals = true_vals.tolist()[0]
         masked_most_freq_pred = most_freq_pred.masked_select(mask).numpy().astype(int)
         masked_true_vals = (
-            torch.tensor(true_vals).masked_select(mask).numpy().astype(int)
+            true_vals.masked_select(mask).numpy().astype(int)
         )
 
         res["subject_codons"] = example["subject_dna_seq"]
@@ -195,7 +223,8 @@ def predict(config, example, mask_restriction_dict, tokenizer, model):
             [int(x == y) for x, y in zip(masked_true_vals, masked_most_freq_pred)]
         )
         res["query_codons"] = example["query_dna_seq"]
-        res["cross_entropy_loss"] = ce(logits, torch.tensor(true_vals)).item()
+
+        res["cross_entropy_loss"] = ce(logits, true_vals.flatten().to(logits.device)).cpu().item()
         res["perplexity"] = np.exp(res["cross_entropy_loss"])
         res["accuracy"] = res["num_of_correct_predicted_codons"] / res["prot_len"]
     # print(example['qseqid'], example['sseqid'],res['cross_entropy_loss'], res['entropy'],res['accuracy'])
